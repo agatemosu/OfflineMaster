@@ -2,12 +2,21 @@ import asyncio
 import os
 import subprocess
 import sys
+from collections.abc import Callable
 
 import update
 from commons import Commands
 
 HOST = "0.0.0.0"
 PORT = 62775
+
+cmd_fns: dict[Commands, Callable[[], None]] = {
+    Commands.UPDATE: lambda: update_and_restart(),
+    Commands.LOGOUT: lambda: run_cmd("shutdown /l"),
+    Commands.SHUTDOWN: lambda: run_cmd("shutdown /s /t 0"),
+    Commands.REBOOT: lambda: run_cmd("shutdown /r /t 0"),
+    Commands.HIBERNATE: lambda: run_cmd("shutdown /h"),
+}
 
 
 def update_and_restart():
@@ -28,21 +37,9 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
     data = await reader.read()
 
     try:
-        match Commands(int.from_bytes(data)):
-            case Commands.UPDATE:
-                update_and_restart()
-
-            case Commands.LOGOUT:
-                run_cmd("shutdown /l")
-
-            case Commands.SHUTDOWN:
-                run_cmd("shutdown /s /t 0")
-
-            case Commands.REBOOT:
-                run_cmd("shutdown /r /t 0")
-
-            case Commands.HIBERNATE:
-                run_cmd("shutdown /h")
+        cmd = Commands(int.from_bytes(data))
+        cmd_fn = cmd_fns[cmd]
+        cmd_fn()
 
     except ValueError:
         print("Invalid command.")
