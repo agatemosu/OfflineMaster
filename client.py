@@ -7,17 +7,13 @@ PORT = 62775
 
 
 async def send(choice: int):
-    try:
-        _, writer = await asyncio.open_connection(HOST, PORT)
+    _, writer = await asyncio.open_connection(HOST, PORT)
 
-        writer.write(choice.to_bytes())
-        await writer.drain()
+    writer.write(choice.to_bytes())
+    await writer.drain()
 
-        writer.close()
-        await writer.wait_closed()
-
-    except OSError as error:
-        print(error.strerror)
+    writer.close()
+    await writer.wait_closed()
 
 
 async def main():
@@ -35,7 +31,11 @@ async def main():
         return
 
     print(f"Sending {command.name} to {HOST}:{PORT}.")
-    await send(choice)
+
+    try:
+        await send(choice)
+    except OSError as error:
+        print(error.strerror)
 
 
 if __name__ == "__main__":
