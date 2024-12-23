@@ -25,12 +25,9 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
     client_ip = f"{addr[0]}:{addr[1]}"
     print(f"Connection with {client_ip} opened.")
 
-    while True:
-        data = await reader.read()
+    data = await reader.read()
 
-        if not data:
-            break
-
+    try:
         match Commands(int.from_bytes(data)):
             case Commands.UPDATE:
                 update_and_restart()
@@ -46,6 +43,9 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
 
             case Commands.HIBERNATE:
                 run_cmd("shutdown /h")
+
+    except ValueError:
+        print("Invalid command.")
 
     writer.close()
     await writer.wait_closed()
